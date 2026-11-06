@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReXNet-150 Datapath Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one column; a wide overview strip (scrolls sideways on phones), then a tall top-to-bottom flow of the tested operations */
+:root{
+  --bg:#f5f6f8; --paper:#ffffff; --ink:#1b2230; --muted:#5a6475; --line:#c9ced8; --band:#e8ebf0;
+  --path:#7a3db8;
+  --pass:#1f8a4c; --pass-bg:#e3f4ea;
+  --fixed:#2b56c6; --fixed-bg:#e4ebfb;
+  --parked:#a86a00; --parked-bg:#fbf0d9;
+  --open:#c23b3b; --open-bg:#fbe5e5;
+  --untested:#b3b9c4; --untested-bg:#eef0f3;
+  --display:"IBM Plex Sans Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12161d; --paper:#1a1f28; --ink:#e4e8ef; --muted:#9aa4b4; --line:#3a4252; --band:#232a35;
+  --path:#c39af0;
+  --pass:#5cc98a; --pass-bg:#16301f;
+  --fixed:#7d9ff0; --fixed-bg:#1b2741;
+  --parked:#e0a842; --parked-bg:#33280f;
+  --open:#ef7b7b; --open-bg:#3a1c1c;
+  --untested:#566070; --untested-bg:#1f252f; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#12161d; --paper:#1a1f28; --ink:#e4e8ef; --muted:#9aa4b4; --line:#3a4252; --band:#232a35;
+  --path:#c39af0;
+  --pass:#5cc98a; --pass-bg:#16301f;
+  --fixed:#7d9ff0; --fixed-bg:#1b2741;
+  --parked:#e0a842; --parked-bg:#33280f;
+  --open:#ef7b7b; --open-bg:#3a1c1c;
+  --untested:#566070; --untested-bg:#1f252f; color-scheme:dark;
+}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px}
+main{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:36px}
+h1,h2{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:2.2rem} h2{font-size:1.45rem;border-bottom:2px solid var(--line);padding-bottom:6px}
+p{margin:0;max-width:70ch}
+section{display:flex;flex-direction:column;gap:14px;min-width:0}
+.eyebrow{font:600 .78rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+code{font-family:var(--mono);font-size:.86em}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.9rem}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:13px;height:13px;border-radius:3px;display:inline-block;border:1.5px solid}
+.sw.pass{background:var(--pass-bg);border-color:var(--pass)} .sw.fixed{background:var(--fixed-bg);border-color:var(--fixed)}
+.sw.parked{background:var(--parked-bg);border-color:var(--parked)} .sw.open{background:var(--open-bg);border-color:var(--open)}
+.sw.untested{background:var(--untested-bg);border-color:var(--untested)}
+.sw.path{border:0;height:3px;width:22px;background:var(--path);border-radius:2px}
+figure{margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+.figwrap{overflow-x:auto;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:12px}
+figcaption{font-size:.92rem;color:var(--muted);max-width:75ch}
+svg.fig{display:block;height:auto;font-family:var(--body)}
+.fig1{min-width:1060px;width:100%}
+.fig2{min-width:540px;width:100%;max-width:660px;margin:0 auto}
+/* svg parts */
+.o13{font-size:13px} .o15{font-size:15px;font-family:var(--display)} .t10{font-size:10.5px} .t11{font-size:11px} .t12{font-size:12px} .t13{font-size:13.5px;font-family:var(--display)}
+svg text{fill:var(--ink)} svg text.mut{fill:var(--muted)} svg text.b,svg tspan.b{font-weight:600}
+svg .num{font-family:var(--mono)}
+svg text.c-acc{fill:var(--path)} svg text.c-mut{fill:var(--muted)} svg text.c-ink{fill:var(--ink)}
+.brk{fill:none;stroke-width:1.5} .brk.c-ink{stroke:var(--ink)} .brk.c-mut{stroke:var(--muted)}
+.ln{fill:none;stroke:var(--muted);stroke-width:1.5} .ln.acc{stroke:var(--path)}
+.ahead{fill:var(--muted)}
+.tap{fill:var(--path)}
+.box-in{fill:var(--paper);stroke:var(--ink);stroke-width:1.5}
+.box-t{fill:var(--paper);stroke:var(--ink);stroke-width:1.5}
+.box-u{fill:var(--untested-bg);stroke:var(--untested);stroke-width:1.2;stroke-dasharray:4 3}
+.band{fill:var(--band)}
+.mark{fill:var(--ink)}
+.dot-pass{fill:var(--pass)} .dot-fixed{fill:var(--fixed)} .dot-parked{fill:var(--parked)} .dot-open{fill:var(--open)} .dot-untested{fill:var(--untested)}
+.op-pass{fill:var(--pass-bg);stroke:var(--pass);stroke-width:1.5} .op-fixed{fill:var(--fixed-bg);stroke:var(--fixed);stroke-width:1.5}
+.op-parked{fill:var(--parked-bg);stroke:var(--parked);stroke-width:1.5} .op-open{fill:var(--open-bg);stroke:var(--open);stroke-width:1.5}
+dl.ops{display:grid;grid-template-columns:max-content 1fr;gap:8px 18px;margin:0;font-size:.95rem;max-width:80ch}
+dl.ops dt{font-weight:600}
+dl.ops dd{margin:0;color:var(--muted)}
+@media (max-width:560px){dl.ops{grid-template-columns:1fr;gap:2px}dl.ops dd{margin-bottom:10px}}
+ul.list{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px;max-width:72ch}
+</style>
+</head>
+<body>
+<main>
+<header style="display:flex;flex-direction:column;gap:10px">
+  <div class="eyebrow">CARES senior project · status on 2026-11-06</div>
+  <h1>ReXNet-150 Datapath Map</h1>
+  <p>Data flows through ReXNet-150 from the input image to the 2-class answer. The chip runs this as 161 separate operations, one after another. This page shows where those operations sit in the network and which ones we have tested.</p>
+  <div class="legend" aria-label="Legend">
+    <span><i class="sw pass"></i>Passes now</span>
+    <span><i class="sw fixed"></i>Passes with a chip-design fix</span>
+    <span><i class="sw open"></i>Not solved</span>
+    <span><i class="sw untested"></i>Not tested yet</span>
+  </div>
+</header>
+
+<section>
+  <h2>The whole network</h2>
+  <figure>
+    <div class="figwrap"><svg class="fig" viewBox="0 0 1284 236" role="img" aria-label="ReXNet-150 from input to classifier: stem, 17 blocks f0 to f16, pooling and classifier. 26 of 161 chip operations, in the stem and blocks f0 to f3, are tested.">
+<defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" class="ahead"/></marker></defs>
+<path d="M160,30 V22 H432 V30" class="brk c-ink"/>
+<text x="296.0" y="16" class="o15 b c-ink" text-anchor="middle">Stage 1: tested (26 operations)</text>
+<path d="M440,30 V22 H1272 V30" class="brk c-mut"/>
+<text x="856.0" y="16" class="o15 b c-mut" text-anchor="middle">Not tested yet (135 operations)</text>
+<rect x="104" y="44" width="48" height="62" rx="5" class="box-in"/>
+<text x="128.0" y="60" class="o15 b" text-anchor="middle">Input</text>
+<text x="128.0" y="80" class="o13 mut" text-anchor="middle">audio</text>
+<text x="128.0" y="95" class="o13 mut" text-anchor="middle">image</text>
+<line x1="152" y1="75.0" x2="159" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="160" y="44" width="48" height="62" rx="5" class="box-t"/>
+<text x="184.0" y="60" class="o15 b" text-anchor="middle">Stem</text>
+<rect x="164.0" y="67.0" width="9" height="9" rx="2" class="dot-pass"/>
+<rect x="174.5" y="67.0" width="9" height="9" rx="2" class="dot-open"/>
+<rect x="185.0" y="67.0" width="9" height="9" rx="2" class="dot-fixed"/>
+<line x1="208" y1="75.0" x2="215" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="216" y="44" width="48" height="62" rx="5" class="box-t"/>
+<text x="240.0" y="60" class="o15 b" text-anchor="middle">f0</text>
+<rect x="220.0" y="67.0" width="9" height="9" rx="2" class="dot-open"/>
+<rect x="230.5" y="67.0" width="9" height="9" rx="2" class="dot-open"/>
+<line x1="264" y1="75.0" x2="271" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="272" y="44" width="48" height="62" rx="5" class="box-t"/>
+<text x="296.0" y="60" class="o15 b" text-anchor="middle">f1</text>
+<rect x="276.0" y="67.0" width="9" height="9" rx="2" class="dot-pass"/>
+<rect x="286.5" y="67.0" width="9" height="9" rx="2" class="dot-fixed"/>
+<rect x="297.0" y="67.0" width="9" height="9" rx="2" class="dot-fixed"/>
+<rect x="307.5" y="67.0" width="9" height="9" rx="2" class="dot-open"/>
+<rect x="276.0" y="77.5" width="9" height="9" rx="2" class="dot-open"/>
+<line x1="320" y1="75.0" x2="327" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="328" y="44" width="48" height="62" rx="5" class="box-t"/>
+<text x="352.0" y="60" class="o15 b" text-anchor="middle">f2</text>
+<rect x="332.0" y="67.0" width="9" height="9" rx="2" class="dot-pass"/>
+<rect x="342.5" y="67.0" width="9" height="9" rx="2" class="dot-fixed"/>
+<rect x="353.0" y="67.0" width="9" height="9" rx="2" class="dot-fixed"/>
+<rect x="363.5" y="67.0" width="9" height="9" rx="2" class="dot-open"/>
+<rect x="332.0" y="77.5" width="9" height="9" rx="2" class="dot-open"/>
+<rect x="342.5" y="77.5" width="9" height="9" rx="2" class="dot-open"/>
+<line x1="376" y1="75.0" x2="383" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="384" y="44" width="48" height="62" rx="5" class="box-t"/>
+<text x="408.0" y="60" class="o15 b" text-anchor="middle">f3</text>
+<rect x="388.0" y="67.0" width="9" height="9" rx="2" class="dot-pass"/>
+<rect x="398.5" y="67.0" width="9" height="9" rx="2" class="dot-fixed"/>
+<rect x="409.0" y="67.0" width="9" height="9" rx="2" class="dot-fixed"/>
+<rect x="419.5" y="67.0" width="9" height="9" rx="2" class="dot-open"/>
+<rect x="388.0" y="77.5" width="9" height="9" rx="2" class="dot-pass"/>
+<rect x="398.5" y="77.5" width="9" height="9" rx="2" class="dot-pass"/>
+<rect x="409.0" y="77.5" width="9" height="9" rx="2" class="dot-pass"/>
+<rect x="419.5" y="77.5" width="9" height="9" rx="2" class="dot-fixed"/>
+<rect x="388.0" y="88.0" width="9" height="9" rx="2" class="dot-open"/>
+<rect x="398.5" y="88.0" width="9" height="9" rx="2" class="dot-pass"/>
+<line x1="432" y1="75.0" x2="439" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="440" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="464.0" y="60" class="o15 b" text-anchor="middle">f4</text>
+<rect x="444.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="454.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="465.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="475.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="444.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="454.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="465.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="475.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="444.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="454.5" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="465.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="488" y1="75.0" x2="495" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="496" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="520.0" y="60" class="o15 b" text-anchor="middle">f5</text>
+<rect x="500.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="510.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="521.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="531.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="500.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="510.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="521.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="531.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="500.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="510.5" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="544" y1="75.0" x2="551" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="552" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="576.0" y="60" class="o15 b" text-anchor="middle">f6</text>
+<rect x="556.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="566.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="577.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="587.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="556.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="566.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="577.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="587.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="556.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="566.5" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="577.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="600" y1="75.0" x2="607" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="608" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="632.0" y="60" class="o15 b" text-anchor="middle">f7</text>
+<rect x="612.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="622.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="633.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="643.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="612.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="622.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="633.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="643.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="612.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="622.5" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="633.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="656" y1="75.0" x2="663" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="664" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="688.0" y="60" class="o15 b" text-anchor="middle">f8</text>
+<rect x="668.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="678.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="689.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="699.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="668.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="678.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="689.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="699.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="668.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="678.5" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="689.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="712" y1="75.0" x2="719" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="720" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="744.0" y="60" class="o15 b" text-anchor="middle">f9</text>
+<rect x="724.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="734.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="745.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="755.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="724.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="734.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="745.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="755.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="724.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="734.5" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="745.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="768" y1="75.0" x2="775" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="776" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="800.0" y="60" class="o15 b" text-anchor="middle">f10</text>
+<rect x="780.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="790.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="801.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="811.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="780.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="790.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="801.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="811.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="780.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="790.5" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="801.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="824" y1="75.0" x2="831" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="832" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="856.0" y="60" class="o15 b" text-anchor="middle">f11</text>
+<rect x="836.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="846.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="857.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="867.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="836.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="846.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="857.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="867.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="836.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="846.5" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="880" y1="75.0" x2="887" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="888" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="912.0" y="60" class="o15 b" text-anchor="middle">f12</text>
+<rect x="892.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="902.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="913.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="923.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="892.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="902.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="913.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="923.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="892.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="902.5" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="913.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="936" y1="75.0" x2="943" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="944" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="968.0" y="60" class="o15 b" text-anchor="middle">f13</text>
+<rect x="948.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="958.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="969.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="979.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="948.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="958.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="969.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="979.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="948.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="958.5" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="969.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="992" y1="75.0" x2="999" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="1000" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="1024.0" y="60" class="o15 b" text-anchor="middle">f14</text>
+<rect x="1004.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1014.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1025.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1035.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1004.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1014.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1025.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1035.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1004.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1014.5" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1025.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="1048" y1="75.0" x2="1055" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="1056" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="1080.0" y="60" class="o15 b" text-anchor="middle">f15</text>
+<rect x="1060.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1070.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1081.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1091.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1060.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1070.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1081.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1091.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1060.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1070.5" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1081.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="1104" y1="75.0" x2="1111" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="1112" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="1136.0" y="60" class="o15 b" text-anchor="middle">f16</text>
+<rect x="1116.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1126.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1137.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="1160" y1="75.0" x2="1167" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="1168" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="1192.0" y="60" class="o15 b" text-anchor="middle">Pool</text>
+<rect x="1172.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="1216" y1="75.0" x2="1223" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="1224" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="1248.0" y="60" class="o15 b" text-anchor="middle">Class.</text>
+<rect x="1228.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<text x="96" y="132" class="o13 mut" text-anchor="end">Output channels</text>
+<text x="96" y="156" class="o13 mut" text-anchor="end">Image size</text>
+<text x="96" y="190" class="o13 mut" text-anchor="end">Squeeze-excite</text>
+<text x="96" y="212" class="o13 mut" text-anchor="end">Shortcut add</text>
+<text x="184.0" y="132" class="o13 num" text-anchor="middle">48</text>
+<text x="240.0" y="132" class="o13 num" text-anchor="middle">24</text>
+<text x="296.0" y="132" class="o13 num" text-anchor="middle">41</text>
+<text x="352.0" y="132" class="o13 num" text-anchor="middle">58</text>
+<circle cx="352.0" cy="208" r="4" class="mark"/>
+<text x="408.0" y="132" class="o13 num" text-anchor="middle">75</text>
+<circle cx="408.0" cy="186" r="4" class="mark"/>
+<text x="464.0" y="132" class="o13 num" text-anchor="middle">92</text>
+<circle cx="464.0" cy="186" r="4" class="mark"/>
+<circle cx="464.0" cy="208" r="4" class="mark"/>
+<text x="520.0" y="132" class="o13 num" text-anchor="middle">108</text>
+<circle cx="520.0" cy="186" r="4" class="mark"/>
+<text x="576.0" y="132" class="o13 num" text-anchor="middle">125</text>
+<circle cx="576.0" cy="186" r="4" class="mark"/>
+<circle cx="576.0" cy="208" r="4" class="mark"/>
+<text x="632.0" y="132" class="o13 num" text-anchor="middle">142</text>
+<circle cx="632.0" cy="186" r="4" class="mark"/>
+<circle cx="632.0" cy="208" r="4" class="mark"/>
+<text x="688.0" y="132" class="o13 num" text-anchor="middle">159</text>
+<circle cx="688.0" cy="186" r="4" class="mark"/>
+<circle cx="688.0" cy="208" r="4" class="mark"/>
+<text x="744.0" y="132" class="o13 num" text-anchor="middle">179</text>
+<circle cx="744.0" cy="186" r="4" class="mark"/>
+<circle cx="744.0" cy="208" r="4" class="mark"/>
+<text x="800.0" y="132" class="o13 num" text-anchor="middle">193</text>
+<circle cx="800.0" cy="186" r="4" class="mark"/>
+<circle cx="800.0" cy="208" r="4" class="mark"/>
+<text x="856.0" y="132" class="o13 num" text-anchor="middle">210</text>
+<circle cx="856.0" cy="186" r="4" class="mark"/>
+<text x="912.0" y="132" class="o13 num" text-anchor="middle">226</text>
+<circle cx="912.0" cy="186" r="4" class="mark"/>
+<circle cx="912.0" cy="208" r="4" class="mark"/>
+<text x="968.0" y="132" class="o13 num" text-anchor="middle">243</text>
+<circle cx="968.0" cy="186" r="4" class="mark"/>
+<circle cx="968.0" cy="208" r="4" class="mark"/>
+<text x="1024.0" y="132" class="o13 num" text-anchor="middle">260</text>
+<circle cx="1024.0" cy="186" r="4" class="mark"/>
+<circle cx="1024.0" cy="208" r="4" class="mark"/>
+<text x="1080.0" y="132" class="o13 num" text-anchor="middle">277</text>
+<circle cx="1080.0" cy="186" r="4" class="mark"/>
+<circle cx="1080.0" cy="208" r="4" class="mark"/>
+<text x="1136.0" y="132" class="o13 num" text-anchor="middle">1920</text>
+<text x="1192.0" y="132" class="o13 num" text-anchor="middle">1920</text>
+<text x="1248.0" y="132" class="o13 num" text-anchor="middle">2</text>
+<rect x="105" y="142" width="46" height="20" rx="3" class="band"/>
+<text x="128.0" y="156" class="o13 b" text-anchor="middle">224×224</text>
+<rect x="161" y="142" width="102" height="20" rx="3" class="band"/>
+<text x="212.0" y="156" class="o13 b" text-anchor="middle">112×112</text>
+<rect x="273" y="142" width="102" height="20" rx="3" class="band"/>
+<text x="324.0" y="156" class="o13 b" text-anchor="middle">56×56</text>
+<rect x="385" y="142" width="102" height="20" rx="3" class="band"/>
+<text x="436.0" y="156" class="o13 b" text-anchor="middle">28×28</text>
+<rect x="497" y="142" width="326" height="20" rx="3" class="band"/>
+<text x="660.0" y="156" class="o13 b" text-anchor="middle">14×14</text>
+<rect x="833" y="142" width="326" height="20" rx="3" class="band"/>
+<text x="996.0" y="156" class="o13 b" text-anchor="middle">7×7</text>
+<rect x="1169" y="142" width="46" height="20" rx="3" class="band"/>
+<text x="1192.0" y="156" class="o13 b" text-anchor="middle">1×1</text>
+<rect x="1225" y="142" width="46" height="20" rx="3" class="band"/>
+<text x="1248.0" y="156" class="o13 b" text-anchor="middle">2 classes</text>
+</svg></div>
+    <figcaption>Each box is one part of the network; each small square inside is one chip operation, colored by test status. The image gets smaller (224×224 down to 7×7) while the number of channels grows (48 up to 1,920). Stage 1, the tested part, is the stem and the first 4 of the 16 main blocks. Operation counts come from our full-network firmware. On a narrow screen, scroll the figure sideways.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>Inside stage 1: the 26 tested operations in order</h2>
+  <figure>
+    <div class="figwrap"><svg class="fig" viewBox="0 0 604 1536" role="img" aria-label="Order of the 26 tested operations. Each SiLU is a sigmoid followed by a multiply with the convolution output. Block f2 adds the f1 output back at operation 15. Block f3 has a squeeze-excite side path, operations 20 to 23, whose weights scale the channels at operation 24.">
+<defs><marker id="ah2" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" class="ahead"/></marker></defs>
+<path d="M254.0,54 V75" class="ln" marker-end="url(#ah2)"/>
+<path d="M254.0,112 V127" class="ln" marker-end="url(#ah2)"/>
+<path d="M254.0,164 V179" class="ln" marker-end="url(#ah2)"/>
+<path d="M254.0,216 V245" class="ln" marker-end="url(#ah2)"/>
+<path d="M254.0,282 V297" class="ln" marker-end="url(#ah2)"/>
+<path d="M254.0,334 V363" class="ln" marker-end="url(#ah2)"/>
+<path d="M254.0,400 V415" class="ln" marker-end="url(#ah2)"/>
+<path d="M254.0,452 V467" class="ln" marker-end="url(#ah2)"/>
+<path d="M254.0,504 V519" class="ln" marker-end="url(#ah2)"/>
+<path d="M254.0,556 V571" class="ln" marker-end="url(#ah2)"/>
+<path d="M254.0,608 V637" class="ln" marker-end="url(#ah2)"/>
+<path d="M254.0,674 V689" class="ln" marker-end="url(#ah2)"/>
+<path d="M254.0,726 V741" class="ln" marker-end="url(#ah2)"/>
+<path d="M254.0,778 V793" class="ln" marker-end="url(#ah2)"/>
+<path d="M254.0,830 V845" class="ln" marker-end="url(#ah2)"/>
+<path d="M254.0,882 V897" class="ln" marker-end="url(#ah2)"/>
+<path d="M254.0,934 V963" class="ln" marker-end="url(#ah2)"/>
+<path d="M254.0,1000 V1015" class="ln" marker-end="url(#ah2)"/>
+<path d="M254.0,1052 V1067" class="ln" marker-end="url(#ah2)"/>
+<path d="M254.0,1104 V1119" class="ln" marker-end="url(#ah2)"/>
+<path d="M254.0,1156 V1379" class="ln" marker-end="url(#ah2)"/>
+<path d="M254.0,1416 V1431" class="ln" marker-end="url(#ah2)"/>
+<path d="M254.0,1468 V1483" class="ln" marker-end="url(#ah2)"/>
+<text x="260.0" y="1268.0" class="t10 mut" text-anchor="start">x: all 348 channels, 28×28</text>
+<circle cx="254.0" cy="119" r="2.6" class="tap"/>
+<path d="M254.0,119 H124 V198.0 H135" class="ln acc" marker-end="url(#ah2)"/>
+<text x="120" y="161.5" class="t11 b c-acc" text-anchor="end">x</text>
+<circle cx="254.0" cy="407" r="2.6" class="tap"/>
+<path d="M254.0,407 H124 V486.0 H135" class="ln acc" marker-end="url(#ah2)"/>
+<text x="120" y="449.5" class="t11 b c-acc" text-anchor="end">x</text>
+<circle cx="254.0" cy="681" r="2.6" class="tap"/>
+<path d="M254.0,681 H124 V760.0 H135" class="ln acc" marker-end="url(#ah2)"/>
+<text x="120" y="723.5" class="t11 b c-acc" text-anchor="end">x</text>
+<circle cx="254.0" cy="1007" r="2.6" class="tap"/>
+<path d="M254.0,1007 H124 V1086.0 H135" class="ln acc" marker-end="url(#ah2)"/>
+<text x="120" y="1049.5" class="t11 b c-acc" text-anchor="end">x</text>
+<circle cx="254.0" cy="1163" r="2.6" class="tap"/>
+<path d="M254.0,1163 H506.0 V1171" class="ln acc" marker-end="url(#ah2)"/>
+<path d="M506.0,1208 V1223" class="ln acc" marker-end="url(#ah2)"/>
+<path d="M506.0,1260 V1275" class="ln acc" marker-end="url(#ah2)"/>
+<path d="M506.0,1312 V1327" class="ln acc" marker-end="url(#ah2)"/>
+<path d="M506.0,1364 V1398.0 H373" class="ln acc" marker-end="url(#ah2)"/>
+<text x="512.0" y="1384.0" class="t10 mut" text-anchor="start">348 weights</text>
+<circle cx="254.0" cy="615" r="2.6" class="tap"/>
+<path d="M254.0,615 H396 V916.0 H373" class="ln acc" marker-end="url(#ah2)"/>
+<text x="404" y="757.5" class="t11 b c-acc" text-anchor="start">shortcut: f1 output</text>
+<text x="404" y="773.5" class="t10 mut" text-anchor="start">skips f2, added back at 15</text>
+<path d="M84,76 H90 V216 H84" class="brk c-mut"/>
+<text x="8" y="90" class="t13 b" text-anchor="start">Stem</text>
+<text x="8" y="106" class="t10 mut num" text-anchor="start">224 → 112</text>
+<path d="M84,246 H90 V334 H84" class="brk c-mut"/>
+<text x="8" y="260" class="t13 b" text-anchor="start">f0</text>
+<text x="8" y="276" class="t10 mut num" text-anchor="start">112</text>
+<path d="M84,364 H90 V608 H84" class="brk c-mut"/>
+<text x="8" y="378" class="t13 b" text-anchor="start">f1</text>
+<text x="8" y="394" class="t10 mut num" text-anchor="start">112 → 56</text>
+<path d="M84,638 H90 V934 H84" class="brk c-mut"/>
+<text x="8" y="652" class="t13 b" text-anchor="start">f2</text>
+<text x="8" y="668" class="t10 mut num" text-anchor="start">56</text>
+<path d="M84,964 H90 V1468 H84" class="brk c-mut"/>
+<text x="8" y="978" class="t13 b" text-anchor="start">f3</text>
+<text x="8" y="994" class="t10 mut num" text-anchor="start">56 → 28</text>
+<rect x="136" y="24" width="236" height="30" rx="5" class="box-in"/>
+<text x="254.0" y="43" class="t12" text-anchor="middle">input image, 224×224</text>
+<rect x="136" y="76" width="236" height="36" rx="5" class="op-pass"/>
+<text x="146" y="91" class="t12"><tspan class="b num">00</tspan>  3×3 conv, stride 2</text>
+<text x="146" y="105" class="t10 mut">→ 48 channels</text>
+<rect x="136" y="128" width="236" height="36" rx="5" class="op-open"/>
+<text x="146" y="143" class="t12"><tspan class="b num">01</tspan>  sigmoid</text>
+<text x="146" y="157" class="t10 mut">σ(x), one value at a time</text>
+<rect x="136" y="180" width="236" height="36" rx="5" class="op-fixed"/>
+<text x="146" y="195" class="t12"><tspan class="b num">02</tspan>  multiply</text>
+<text x="146" y="209" class="t10 mut">x · σ(x)</text>
+<rect x="136" y="246" width="236" height="36" rx="5" class="op-open"/>
+<text x="146" y="261" class="t12"><tspan class="b num">03</tspan>  depthwise 3×3 conv</text>
+<text x="146" y="275" class="t10 mut">each channel alone</text>
+<rect x="136" y="298" width="236" height="36" rx="5" class="op-open"/>
+<text x="146" y="313" class="t12"><tspan class="b num">04</tspan>  1×1 conv</text>
+<text x="146" y="327" class="t10 mut">48 → 24 channels</text>
+<rect x="136" y="364" width="236" height="36" rx="5" class="op-pass"/>
+<text x="146" y="379" class="t12"><tspan class="b num">05</tspan>  1×1 conv, expand</text>
+<text x="146" y="393" class="t10 mut">24 → 144 channels</text>
+<rect x="136" y="416" width="236" height="36" rx="5" class="op-fixed"/>
+<text x="146" y="431" class="t12"><tspan class="b num">06</tspan>  sigmoid</text>
+<text x="146" y="445" class="t10 mut">σ(x)</text>
+<rect x="136" y="468" width="236" height="36" rx="5" class="op-fixed"/>
+<text x="146" y="483" class="t12"><tspan class="b num">07</tspan>  multiply</text>
+<text x="146" y="497" class="t10 mut">x · σ(x)</text>
+<rect x="136" y="520" width="236" height="36" rx="5" class="op-open"/>
+<text x="146" y="535" class="t12"><tspan class="b num">08</tspan>  depthwise 3×3, stride 2</text>
+<text x="146" y="549" class="t10 mut">image 112 → 56</text>
+<rect x="136" y="572" width="236" height="36" rx="5" class="op-open"/>
+<text x="146" y="587" class="t12"><tspan class="b num">09</tspan>  1×1 conv, project</text>
+<text x="146" y="601" class="t10 mut">144 → 41 channels</text>
+<rect x="136" y="638" width="236" height="36" rx="5" class="op-pass"/>
+<text x="146" y="653" class="t12"><tspan class="b num">10</tspan>  1×1 conv, expand</text>
+<text x="146" y="667" class="t10 mut">41 → 246 channels</text>
+<rect x="136" y="690" width="236" height="36" rx="5" class="op-fixed"/>
+<text x="146" y="705" class="t12"><tspan class="b num">11</tspan>  sigmoid</text>
+<text x="146" y="719" class="t10 mut">σ(x)</text>
+<rect x="136" y="742" width="236" height="36" rx="5" class="op-fixed"/>
+<text x="146" y="757" class="t12"><tspan class="b num">12</tspan>  multiply</text>
+<text x="146" y="771" class="t10 mut">x · σ(x)</text>
+<rect x="136" y="794" width="236" height="36" rx="5" class="op-open"/>
+<text x="146" y="809" class="t12"><tspan class="b num">13</tspan>  depthwise 3×3 conv</text>
+<text x="146" y="823" class="t10 mut">each channel alone</text>
+<rect x="136" y="846" width="236" height="36" rx="5" class="op-open"/>
+<text x="146" y="861" class="t12"><tspan class="b num">14</tspan>  1×1 conv, project</text>
+<text x="146" y="875" class="t10 mut">246 → 58 channels</text>
+<rect x="136" y="898" width="236" height="36" rx="5" class="op-open"/>
+<text x="146" y="913" class="t12"><tspan class="b num">15</tspan>  add</text>
+<text x="146" y="927" class="t10 mut">+ block input (41 ch)</text>
+<rect x="136" y="964" width="236" height="36" rx="5" class="op-pass"/>
+<text x="146" y="979" class="t12"><tspan class="b num">16</tspan>  1×1 conv, expand</text>
+<text x="146" y="993" class="t10 mut">58 → 348 channels</text>
+<rect x="136" y="1016" width="236" height="36" rx="5" class="op-fixed"/>
+<text x="146" y="1031" class="t12"><tspan class="b num">17</tspan>  sigmoid</text>
+<text x="146" y="1045" class="t10 mut">σ(x)</text>
+<rect x="136" y="1068" width="236" height="36" rx="5" class="op-fixed"/>
+<text x="146" y="1083" class="t12"><tspan class="b num">18</tspan>  multiply</text>
+<text x="146" y="1097" class="t10 mut">x · σ(x)</text>
+<rect x="136" y="1120" width="236" height="36" rx="5" class="op-open"/>
+<text x="146" y="1135" class="t12"><tspan class="b num">19</tspan>  depthwise 3×3, stride 2</text>
+<text x="146" y="1149" class="t10 mut">image 56 → 28</text>
+<rect x="418" y="1172" width="176" height="36" rx="5" class="op-pass"/>
+<text x="428" y="1187" class="t12"><tspan class="b num">20</tspan>  average</text>
+<text x="428" y="1201" class="t10 mut">28×28 → 1 per channel</text>
+<rect x="418" y="1224" width="176" height="36" rx="5" class="op-pass"/>
+<text x="428" y="1239" class="t12"><tspan class="b num">21</tspan>  small conv (fc1)</text>
+<text x="428" y="1253" class="t10 mut">348 → 29</text>
+<rect x="418" y="1276" width="176" height="36" rx="5" class="op-pass"/>
+<text x="428" y="1291" class="t12"><tspan class="b num">22</tspan>  small conv (fc2)</text>
+<text x="428" y="1305" class="t10 mut">29 → 348</text>
+<rect x="418" y="1328" width="176" height="36" rx="5" class="op-fixed"/>
+<text x="428" y="1343" class="t12"><tspan class="b num">23</tspan>  sigmoid</text>
+<text x="428" y="1357" class="t10 mut">one weight per channel</text>
+<rect x="136" y="1380" width="236" height="36" rx="5" class="op-open"/>
+<text x="146" y="1395" class="t12"><tspan class="b num">24</tspan>  multiply</text>
+<text x="146" y="1409" class="t10 mut">channel × its weight</text>
+<rect x="136" y="1432" width="236" height="36" rx="5" class="op-pass"/>
+<text x="146" y="1447" class="t12"><tspan class="b num">25</tspan>  1×1 conv, project</text>
+<text x="146" y="1461" class="t10 mut">348 → 75 channels</text>
+<rect x="136" y="1484" width="236" height="30" rx="5" class="box-u"/>
+<text x="254.0" y="1503" class="t12 mut" text-anchor="middle">to blocks f4 … f16, pool, classifier</text>
+</svg></div>
+    <figcaption>Read from top to bottom. Grey arrows are the main data path. Purple arrows are side paths that carry a copy of the data around some operations and join again later.</figcaption>
+  </figure>
+  <div class="legend"><span><i class="sw path"></i>Side path: a copy of the data taken at the dot and used later</span></div>
+  <ul class="list">
+    <li><b>SiLU</b> (the activation after each expand conv and in the stem) is x · σ(x). The chip computes it in two operations: a sigmoid, then a multiply of the result with the original x, which comes in on the left purple path.</li>
+    <li><b>Shortcut</b> (block f2): the output of block f1 skips block f2 and is added to f2's result at operation 15. Blocks that shrink the image (f1, f3, f5, f11) cannot do this, because the sizes no longer match.</li>
+    <li><b>Squeeze-excite</b> (block f3): a side path computes one weight per channel (operations 20–23). Operation 24 multiplies every value of each channel by that channel's weight.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>What each operation does</h2>
+  <dl class="ops">
+    <dt>3×3 conv</dt><dd>Each output value combines a 3×3 patch of every input channel. Stride 2 skips every other position, so the image halves in width and height.</dd>
+    <dt>1×1 conv</dt><dd>Mixes channels at each pixel, with no neighbors. "Expand" makes many more channels; "project" brings the count back down.</dd>
+    <dt>Depthwise 3×3 conv</dt><dd>Filters each channel on its own with a 3×3 patch. Cheap, and the only operation that looks at neighboring pixels inside a block.</dd>
+    <dt>Sigmoid</dt><dd>σ(x) = 1 / (1 + e<sup>−x</sup>), squashing any value into 0 to 1. The chip reads it from a table.</dd>
+    <dt>Multiply</dt><dd>Multiplies two tensors value by value (SiLU), or every value of a channel by one weight (squeeze-excite).</dd>
+    <dt>Average</dt><dd>Turns each channel's whole image into one number, its mean.</dd>
+    <dt>Add</dt><dd>Adds two tensors value by value (the shortcut).</dd>
+    <dt>Pool, classifier</dt><dd>At the end, the average of each of the 1,920 channels feeds one fully connected layer that outputs the 2 class scores.</dd>
+  </dl>
+</section>
+
+<section>
+  <h2>The untested blocks f4 to f15</h2>
+  <ul class="list">
+    <li>Each one repeats the f3 pattern: expand, SiLU, depthwise, squeeze-excite, project. That is 10 operations.</li>
+    <li>10 of the 12 blocks also add the shortcut, as f2 does (11 operations). f5 and f11 shrink the image instead and have no shortcut.</li>
+    <li>They use the same circuits as stage 1, so the fixes found so far apply to them. Their sizes differ: smaller images, more channels.</li>
+    <li>Block f16 is one 1×1 conv to 1,920 channels plus SiLU. Then pool and classifier.</li>
+  </ul>
+  <p class="muted">Each tested operation was run alone, starting from the correct input taken from the model on a PC. Running several operations in a chain, where small errors can add up, is not tested yet.</p>
+</section>
+</main>
+</body>
+</html>

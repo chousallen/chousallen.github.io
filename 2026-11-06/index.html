@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CARES Weekly Report, Nov 6</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column; summary tiles, then a dated log, the 26-layer board, the bug table, decisions and next week */
+:root{
+  --bg:#f5f6f8; --paper:#ffffff; --ink:#1b2230; --muted:#5a6475; --line:#d9dde4;
+  --accent:#2b56c6;
+  --pass:#1f8a4c; --pass-bg:#e3f4ea;
+  --fixed:#2b56c6; --fixed-bg:#e4ebfb;
+  --parked:#a86a00; --parked-bg:#fbf0d9;
+  --open:#c23b3b; --open-bg:#fbe5e5;
+  --c2:#0f7f86; --c2-bg:#dff3f3; --c4:#7a45c2; --c4-bg:#efe6fa;
+  --code-bg:#eef0f4; --untested:#b3b9c4; --untested-bg:#eef0f3; --band:#e8ebf0;
+  --display:"IBM Plex Sans Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12161d; --paper:#1a1f28; --ink:#e4e8ef; --muted:#9aa4b4; --line:#2e3542;
+  --accent:#7d9ff0;
+  --pass:#5cc98a; --pass-bg:#16301f;
+  --fixed:#7d9ff0; --fixed-bg:#1b2741;
+  --parked:#e0a842; --parked-bg:#33280f;
+  --open:#ef7b7b; --open-bg:#3a1c1c;
+  --c2:#4fc6cc; --c2-bg:#123033; --c4:#b48cf0; --c4-bg:#2a1f3d;
+  --code-bg:#232a35; --untested:#566070; --untested-bg:#1f252f; --band:#232a35; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#12161d; --paper:#1a1f28; --ink:#e4e8ef; --muted:#9aa4b4; --line:#2e3542;
+  --accent:#7d9ff0;
+  --pass:#5cc98a; --pass-bg:#16301f;
+  --fixed:#7d9ff0; --fixed-bg:#1b2741;
+  --parked:#e0a842; --parked-bg:#33280f;
+  --open:#ef7b7b; --open-bg:#3a1c1c;
+  --c2:#4fc6cc; --c2-bg:#123033; --c4:#b48cf0; --c4-bg:#2a1f3d;
+  --code-bg:#232a35; --untested:#566070; --untested-bg:#1f252f; --band:#232a35; color-scheme:dark;
+}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px}
+main{max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+h1,h2,h3{font-family:var(--display);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:2.3rem}
+h2{font-size:1.5rem;border-bottom:2px solid var(--line);padding-bottom:6px}
+h3{font-size:1.08rem}
+p{margin:0;max-width:70ch}
+section{display:flex;flex-direction:column;gap:14px}
+.eyebrow{font:600 .78rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{font-size:1.06rem}
+code{font-family:var(--mono);font-size:.86em;background:var(--code-bg);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.muted{color:var(--muted)}
+.small{font-size:.9rem}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* summary tiles */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;font-variant-numeric:tabular-nums}
+.kpi{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.kpi .v{font-family:var(--display);font-size:1.8rem;line-height:1.1}
+.kpi .v s{color:var(--muted);font-size:1.1rem;margin-right:6px}
+.kpi .l{font-size:.88rem;color:var(--muted)}
+
+/* dated log */
+.log{display:flex;flex-direction:column;gap:14px}
+.day{display:grid;grid-template-columns:92px 1fr;gap:12px}
+.day .d{font:600 .85rem var(--mono);color:var(--muted);padding-top:3px;font-variant-numeric:tabular-nums}
+.day ul{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:6px;min-width:0}
+@media (max-width:560px){.day{grid-template-columns:1fr;gap:4px}}
+
+/* board */
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.88rem}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:12px;height:12px;border-radius:3px;display:inline-block}
+.board{display:flex;flex-direction:column;gap:6px}
+.row{display:grid;grid-template-columns:44px 1fr;gap:8px;align-items:start}
+.row .blk{font:600 .75rem var(--mono);color:var(--muted);padding-top:10px}
+.tiles{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+.t{width:76px;border-radius:6px;padding:5px 7px;font-size:.78rem;line-height:1.25;border:1px solid transparent}
+.t .n{font:600 .8rem var(--mono)}
+.t.pass{background:var(--pass-bg);color:var(--pass);border-color:var(--pass)}
+.t.fixed{background:var(--fixed-bg);color:var(--fixed);border-color:var(--fixed)}
+.t.parked{background:var(--parked-bg);color:var(--parked);border-color:var(--parked)}
+.t.open{background:var(--open-bg);color:var(--open);border-color:var(--open)}
+.t.c2{background:var(--c2-bg);color:var(--c2);border-color:var(--c2)}
+.t.c4{background:var(--c4-bg);color:var(--c4);border-color:var(--c4)}
+/* bug table */
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--paper)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:.92rem}
+th,td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{font:600 .75rem var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--code-bg)}
+tr:last-child td{border-bottom:0}
+td.n{font:600 .9rem var(--mono);font-variant-numeric:tabular-nums;width:2.2em}
+tr.grp td{background:var(--bg);font-weight:600;font-family:var(--display)}
+.pill{display:inline-block;font:600 .7rem var(--mono);letter-spacing:.04em;text-transform:uppercase;padding:1px 7px;border-radius:999px;background:var(--pb);color:var(--pc);white-space:nowrap}
+.p-pass{--pb:var(--pass-bg);--pc:var(--pass)} .p-fixed{--pb:var(--fixed-bg);--pc:var(--fixed)}
+.p-parked{--pb:var(--parked-bg);--pc:var(--parked)} .p-c2{--pb:var(--c2-bg);--pc:var(--c2)} .p-c4{--pb:var(--c4-bg);--pc:var(--c4)} .p-open{--pb:var(--open-bg);--pc:var(--open)} .p-untested{--pb:var(--untested-bg);--pc:var(--muted)}
+td.mono{font-family:var(--mono);font-size:.85rem;white-space:normal}
+
+.callout{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+ol.list,ul.list{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:8px;max-width:70ch}
+/* overview strip (from the datapath map) */
+.ovwrap{overflow-x:auto;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:10px}
+svg.ov{display:block;width:100%;min-width:760px;height:auto;font-family:var(--body)}
+svg.ov text{fill:var(--ink)} svg.ov text.mut,svg.ov text.c-mut{fill:var(--muted)}
+svg.ov .o13{font-size:13px} svg.ov .o15{font-size:15px;font-family:var(--display)} svg.ov .b{font-weight:600} svg.ov .num{font-family:var(--mono)}
+svg.ov .brk{fill:none;stroke-width:1.5} svg.ov .brk.c-ink{stroke:var(--ink)} svg.ov .brk.c-mut{stroke:var(--muted)}
+svg.ov .ln{fill:none;stroke:var(--muted);stroke-width:1.5} svg.ov .ahead{fill:var(--muted)}
+svg.ov .box-in,svg.ov .box-t{fill:var(--paper);stroke:var(--ink);stroke-width:1.5}
+svg.ov .box-u{fill:var(--untested-bg);stroke:var(--untested);stroke-width:1.2;stroke-dasharray:4 3}
+svg.ov .band{fill:var(--band)} svg.ov .mark{fill:var(--ink)}
+svg.ov .dot-pass{fill:var(--pass)} svg.ov .dot-fixed{fill:var(--fixed)} svg.ov .dot-parked{fill:var(--parked)} svg.ov .dot-open{fill:var(--open)} svg.ov .dot-c2{fill:var(--c2)} svg.ov .dot-c4{fill:var(--c4)} svg.ov .dot-untested{fill:var(--untested)}
+</style>
+</head>
+<body>
+<main>
+
+<header style="display:flex;flex-direction:column;gap:10px">
+  <div class="eyebrow">CARES senior project · weekly report · 2026-10-31 to 2026-11-06</div>
+  <h1>CARES Weekly Report, Nov 6</h1>
+  <p class="lede">Goal of the project: run the ReXNet-150 audio classifier on the FINALE accelerator chip design, on the DE10-Pro FPGA board. This week the old 2022 demo ran on the board for the first time, the chip simulation became about 470 times faster, and the first 26 ReXNet operations (the stem and blocks f0 to f3) were tested one by one. Ten bugs were found and fixed; six problems remain.</p>
+</header>
+
+<section>
+  <h2>This week in numbers</h2>
+  <div class="kpis">
+    <div class="kpi"><div class="v">32.5 fps</div><div class="l">2022 MobileNetV2-SSD demo on the FPGA board, 500 images</div></div>
+    <div class="kpi"><div class="v"><s>78 min</s>10 s</div><div class="l">simulating the stem convolution, before and after</div></div>
+    <div class="kpi"><div class="v"><s>7</s>16 / 26</div><div class="l">ReXNet operations within ±1 of the correct output: 7 before this week's fixes, 16 after (8 of them need this week's chip-design fixes)</div></div>
+    <div class="kpi"><div class="v">10 fixed</div><div class="l">bugs: 6 in our firmware and scripts, 4 in the chip design</div></div>
+  </div>
+</section>
+
+<section>
+  <h2>What was done</h2>
+  <ul class="list">
+      <li><b>Remote power-on for the lab PC.</b> A small Ethernet board on the lab network now sends the "wake up" packet; the PC can be started from a cold power-off over the internet. Power-cycling the PC also resets the FPGA board.</li>
+      <li><b>First working FPGA run.</b> After the card was reseated, the 2022 FPGA image loaded and the PC found the board on PCIe. The 2022 demo processed 500 images at 32.5 fps on the FPGA (25.5 fps including the PC side). Its output has never been compared with the original model, so this shows that the board runs, not that its results are correct.</li>
+      <li><b>Simulation 470× faster.</b> 99.6 % of simulation time was the simulated memory chip in the test bench, which re-copied its whole 256 MB on every write. A one-line change fixed it; results are bit-identical.</li>
+      <li><b>Test flow for one operation at a time.</b> New scripts build one test per operation from the real model data and run all 26 operations of stage 1 (stem to block f3) in under a minute.</li>
+      <li><b>First results and first fixes.</b> 7 operations passed at once. Four debug investigations ran in parallel on the failing operations. Six firmware and script bugs were fixed. Three bugs in the multiply unit of the chip design were proven and fixed.</li>
+      <li><b>Sigmoid unit fixed.</b> A bug in its "too large" check was proven and fixed; four sigmoid operations now pass.</li>
+      <li><b>Second debug round</b> on standalone depthwise convolution and on wide 1×1 convolution. No root cause found; both <b>parked</b> by decision.</li>
+      <li>Found that 82 chip-design files are identical to the 2022 design that works on the board. Every confirmed bug so far is in parts the previous student added or changed.</li>
+      <li><b>First FPGA rebuild.</b> The 2022 FPGA project was rebuilt with only the October memory-transfer fix (Quartus, 6 h 14 min, finished Nov 5). Timing misses by up to 0.26 ns on the memory-controller clocks, the same as an unpatched rebuild in March. Not loaded on the board yet. A small PC program that runs the stem convolution on the board and compares it with the simulation is ready.</li>
+      <li><b>Checked the sigmoid unit: it is not on the FPGA yet.</b> The board runs the 2022 image, which has no sigmoid or multiply unit. The new sigmoid unit (a 1024-entry lookup table for 32 channels at once) needs an FPGA rebuild.</li>
+    </ul>
+</section>
+
+<section>
+  <h2>The 26 operations today</h2>
+  <figure style="margin:0;display:flex;flex-direction:column;gap:8px">
+    <div class="ovwrap"><svg class="ov" viewBox="0 0 1284 236" role="img" aria-label="ReXNet-150 from input to classifier: stem, 17 blocks f0 to f16, pooling and classifier. 26 of 161 chip operations, in the stem and blocks f0 to f3, are tested.">
+<defs><marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z" class="ahead"/></marker></defs>
+<path d="M160,30 V22 H432 V30" class="brk c-ink"/>
+<text x="296.0" y="16" class="o15 b c-ink" text-anchor="middle">Stage 1: tested (26 operations)</text>
+<path d="M440,30 V22 H1272 V30" class="brk c-mut"/>
+<text x="856.0" y="16" class="o15 b c-mut" text-anchor="middle">Not tested yet (135 operations)</text>
+<rect x="104" y="44" width="48" height="62" rx="5" class="box-in"/>
+<text x="128.0" y="60" class="o15 b" text-anchor="middle">Input</text>
+<text x="128.0" y="80" class="o13 mut" text-anchor="middle">audio</text>
+<text x="128.0" y="95" class="o13 mut" text-anchor="middle">image</text>
+<line x1="152" y1="75.0" x2="159" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="160" y="44" width="48" height="62" rx="5" class="box-t"/>
+<text x="184.0" y="60" class="o15 b" text-anchor="middle">Stem</text>
+<rect x="164.0" y="67.0" width="9" height="9" rx="2" class="dot-pass"/>
+<rect x="174.5" y="67.0" width="9" height="9" rx="2" class="dot-open"/>
+<rect x="185.0" y="67.0" width="9" height="9" rx="2" class="dot-fixed"/>
+<line x1="208" y1="75.0" x2="215" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="216" y="44" width="48" height="62" rx="5" class="box-t"/>
+<text x="240.0" y="60" class="o15 b" text-anchor="middle">f0</text>
+<rect x="220.0" y="67.0" width="9" height="9" rx="2" class="dot-open"/>
+<rect x="230.5" y="67.0" width="9" height="9" rx="2" class="dot-open"/>
+<line x1="264" y1="75.0" x2="271" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="272" y="44" width="48" height="62" rx="5" class="box-t"/>
+<text x="296.0" y="60" class="o15 b" text-anchor="middle">f1</text>
+<rect x="276.0" y="67.0" width="9" height="9" rx="2" class="dot-pass"/>
+<rect x="286.5" y="67.0" width="9" height="9" rx="2" class="dot-c4"/>
+<rect x="297.0" y="67.0" width="9" height="9" rx="2" class="dot-fixed"/>
+<rect x="307.5" y="67.0" width="9" height="9" rx="2" class="dot-open"/>
+<rect x="276.0" y="77.5" width="9" height="9" rx="2" class="dot-open"/>
+<line x1="320" y1="75.0" x2="327" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="328" y="44" width="48" height="62" rx="5" class="box-t"/>
+<text x="352.0" y="60" class="o15 b" text-anchor="middle">f2</text>
+<rect x="332.0" y="67.0" width="9" height="9" rx="2" class="dot-pass"/>
+<rect x="342.5" y="67.0" width="9" height="9" rx="2" class="dot-c4"/>
+<rect x="353.0" y="67.0" width="9" height="9" rx="2" class="dot-fixed"/>
+<rect x="363.5" y="67.0" width="9" height="9" rx="2" class="dot-open"/>
+<rect x="332.0" y="77.5" width="9" height="9" rx="2" class="dot-open"/>
+<rect x="342.5" y="77.5" width="9" height="9" rx="2" class="dot-open"/>
+<line x1="376" y1="75.0" x2="383" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="384" y="44" width="48" height="62" rx="5" class="box-t"/>
+<text x="408.0" y="60" class="o15 b" text-anchor="middle">f3</text>
+<rect x="388.0" y="67.0" width="9" height="9" rx="2" class="dot-pass"/>
+<rect x="398.5" y="67.0" width="9" height="9" rx="2" class="dot-c4"/>
+<rect x="409.0" y="67.0" width="9" height="9" rx="2" class="dot-fixed"/>
+<rect x="419.5" y="67.0" width="9" height="9" rx="2" class="dot-open"/>
+<rect x="388.0" y="77.5" width="9" height="9" rx="2" class="dot-c2"/>
+<rect x="398.5" y="77.5" width="9" height="9" rx="2" class="dot-pass"/>
+<rect x="409.0" y="77.5" width="9" height="9" rx="2" class="dot-pass"/>
+<rect x="419.5" y="77.5" width="9" height="9" rx="2" class="dot-c4"/>
+<rect x="388.0" y="88.0" width="9" height="9" rx="2" class="dot-open"/>
+<rect x="398.5" y="88.0" width="9" height="9" rx="2" class="dot-pass"/>
+<line x1="432" y1="75.0" x2="439" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="440" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="464.0" y="60" class="o15 b" text-anchor="middle">f4</text>
+<rect x="444.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="454.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="465.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="475.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="444.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="454.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="465.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="475.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="444.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="454.5" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="465.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="488" y1="75.0" x2="495" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="496" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="520.0" y="60" class="o15 b" text-anchor="middle">f5</text>
+<rect x="500.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="510.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="521.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="531.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="500.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="510.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="521.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="531.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="500.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="510.5" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="544" y1="75.0" x2="551" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="552" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="576.0" y="60" class="o15 b" text-anchor="middle">f6</text>
+<rect x="556.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="566.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="577.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="587.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="556.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="566.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="577.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="587.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="556.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="566.5" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="577.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="600" y1="75.0" x2="607" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="608" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="632.0" y="60" class="o15 b" text-anchor="middle">f7</text>
+<rect x="612.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="622.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="633.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="643.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="612.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="622.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="633.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="643.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="612.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="622.5" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="633.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="656" y1="75.0" x2="663" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="664" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="688.0" y="60" class="o15 b" text-anchor="middle">f8</text>
+<rect x="668.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="678.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="689.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="699.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="668.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="678.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="689.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="699.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="668.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="678.5" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="689.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="712" y1="75.0" x2="719" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="720" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="744.0" y="60" class="o15 b" text-anchor="middle">f9</text>
+<rect x="724.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="734.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="745.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="755.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="724.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="734.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="745.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="755.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="724.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="734.5" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="745.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="768" y1="75.0" x2="775" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="776" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="800.0" y="60" class="o15 b" text-anchor="middle">f10</text>
+<rect x="780.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="790.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="801.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="811.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="780.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="790.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="801.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="811.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="780.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="790.5" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="801.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="824" y1="75.0" x2="831" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="832" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="856.0" y="60" class="o15 b" text-anchor="middle">f11</text>
+<rect x="836.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="846.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="857.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="867.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="836.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="846.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="857.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="867.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="836.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="846.5" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="880" y1="75.0" x2="887" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="888" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="912.0" y="60" class="o15 b" text-anchor="middle">f12</text>
+<rect x="892.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="902.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="913.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="923.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="892.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="902.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="913.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="923.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="892.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="902.5" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="913.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="936" y1="75.0" x2="943" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="944" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="968.0" y="60" class="o15 b" text-anchor="middle">f13</text>
+<rect x="948.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="958.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="969.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="979.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="948.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="958.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="969.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="979.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="948.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="958.5" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="969.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="992" y1="75.0" x2="999" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="1000" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="1024.0" y="60" class="o15 b" text-anchor="middle">f14</text>
+<rect x="1004.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1014.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1025.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1035.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1004.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1014.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1025.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1035.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1004.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1014.5" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1025.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="1048" y1="75.0" x2="1055" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="1056" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="1080.0" y="60" class="o15 b" text-anchor="middle">f15</text>
+<rect x="1060.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1070.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1081.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1091.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1060.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1070.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1081.0" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1091.5" y="77.5" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1060.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1070.5" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1081.0" y="88.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="1104" y1="75.0" x2="1111" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="1112" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="1136.0" y="60" class="o15 b" text-anchor="middle">f16</text>
+<rect x="1116.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1126.5" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<rect x="1137.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="1160" y1="75.0" x2="1167" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="1168" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="1192.0" y="60" class="o15 b" text-anchor="middle">Pool</text>
+<rect x="1172.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<line x1="1216" y1="75.0" x2="1223" y2="75.0" class="ln" marker-end="url(#ah)"/>
+<rect x="1224" y="44" width="48" height="62" rx="5" class="box-u"/>
+<text x="1248.0" y="60" class="o15 b" text-anchor="middle">Class.</text>
+<rect x="1228.0" y="67.0" width="9" height="9" rx="2" class="dot-untested"/>
+<text x="96" y="132" class="o13 mut" text-anchor="end">Output channels</text>
+<text x="96" y="156" class="o13 mut" text-anchor="end">Image size</text>
+<text x="96" y="190" class="o13 mut" text-anchor="end">Squeeze-excite</text>
+<text x="96" y="212" class="o13 mut" text-anchor="end">Shortcut add</text>
+<text x="184.0" y="132" class="o13 num" text-anchor="middle">48</text>
+<text x="240.0" y="132" class="o13 num" text-anchor="middle">24</text>
+<text x="296.0" y="132" class="o13 num" text-anchor="middle">41</text>
+<text x="352.0" y="132" class="o13 num" text-anchor="middle">58</text>
+<circle cx="352.0" cy="208" r="4" class="mark"/>
+<text x="408.0" y="132" class="o13 num" text-anchor="middle">75</text>
+<circle cx="408.0" cy="186" r="4" class="mark"/>
+<text x="464.0" y="132" class="o13 num" text-anchor="middle">92</text>
+<circle cx="464.0" cy="186" r="4" class="mark"/>
+<circle cx="464.0" cy="208" r="4" class="mark"/>
+<text x="520.0" y="132" class="o13 num" text-anchor="middle">108</text>
+<circle cx="520.0" cy="186" r="4" class="mark"/>
+<text x="576.0" y="132" class="o13 num" text-anchor="middle">125</text>
+<circle cx="576.0" cy="186" r="4" class="mark"/>
+<circle cx="576.0" cy="208" r="4" class="mark"/>
+<text x="632.0" y="132" class="o13 num" text-anchor="middle">142</text>
+<circle cx="632.0" cy="186" r="4" class="mark"/>
+<circle cx="632.0" cy="208" r="4" class="mark"/>
+<text x="688.0" y="132" class="o13 num" text-anchor="middle">159</text>
+<circle cx="688.0" cy="186" r="4" class="mark"/>
+<circle cx="688.0" cy="208" r="4" class="mark"/>
+<text x="744.0" y="132" class="o13 num" text-anchor="middle">179</text>
+<circle cx="744.0" cy="186" r="4" class="mark"/>
+<circle cx="744.0" cy="208" r="4" class="mark"/>
+<text x="800.0" y="132" class="o13 num" text-anchor="middle">193</text>
+<circle cx="800.0" cy="186" r="4" class="mark"/>
+<circle cx="800.0" cy="208" r="4" class="mark"/>
+<text x="856.0" y="132" class="o13 num" text-anchor="middle">210</text>
+<circle cx="856.0" cy="186" r="4" class="mark"/>
+<text x="912.0" y="132" class="o13 num" text-anchor="middle">226</text>
+<circle cx="912.0" cy="186" r="4" class="mark"/>
+<circle cx="912.0" cy="208" r="4" class="mark"/>
+<text x="968.0" y="132" class="o13 num" text-anchor="middle">243</text>
+<circle cx="968.0" cy="186" r="4" class="mark"/>
+<circle cx="968.0" cy="208" r="4" class="mark"/>
+<text x="1024.0" y="132" class="o13 num" text-anchor="middle">260</text>
+<circle cx="1024.0" cy="186" r="4" class="mark"/>
+<circle cx="1024.0" cy="208" r="4" class="mark"/>
+<text x="1080.0" y="132" class="o13 num" text-anchor="middle">277</text>
+<circle cx="1080.0" cy="186" r="4" class="mark"/>
+<circle cx="1080.0" cy="208" r="4" class="mark"/>
+<text x="1136.0" y="132" class="o13 num" text-anchor="middle">1920</text>
+<text x="1192.0" y="132" class="o13 num" text-anchor="middle">1920</text>
+<text x="1248.0" y="132" class="o13 num" text-anchor="middle">2</text>
+<rect x="105" y="142" width="46" height="20" rx="3" class="band"/>
+<text x="128.0" y="156" class="o13 b" text-anchor="middle">224×224</text>
+<rect x="161" y="142" width="102" height="20" rx="3" class="band"/>
+<text x="212.0" y="156" class="o13 b" text-anchor="middle">112×112</text>
+<rect x="273" y="142" width="102" height="20" rx="3" class="band"/>
+<text x="324.0" y="156" class="o13 b" text-anchor="middle">56×56</text>
+<rect x="385" y="142" width="102" height="20" rx="3" class="band"/>
+<text x="436.0" y="156" class="o13 b" text-anchor="middle">28×28</text>
+<rect x="497" y="142" width="326" height="20" rx="3" class="band"/>
+<text x="660.0" y="156" class="o13 b" text-anchor="middle">14×14</text>
+<rect x="833" y="142" width="326" height="20" rx="3" class="band"/>
+<text x="996.0" y="156" class="o13 b" text-anchor="middle">7×7</text>
+<rect x="1169" y="142" width="46" height="20" rx="3" class="band"/>
+<text x="1192.0" y="156" class="o13 b" text-anchor="middle">1×1</text>
+<rect x="1225" y="142" width="46" height="20" rx="3" class="band"/>
+<text x="1248.0" y="156" class="o13 b" text-anchor="middle">2 classes</text>
+</svg></div>
+    <figcaption class="muted small">Where the tested operations sit in the whole network: each small square is one of ReXNet-150's 161 chip operations, left to right in data-flow order. Grey squares are not tested yet. The order inside each tested block, with the side paths, is drawn in the <a href="https://claude.ai/artifact/78LpwjMb4MjEg3y8iZamgD" target="_blank" rel="noopener">ReXNet-150 Datapath Map</a>.</figcaption>
+  </figure>
+  <div class="callout">
+    <h3>Why stage 1 stops at block f3</h3>
+    <p>The stem and blocks f0 to f3 already contain every kind of operation in the network and its largest images (112×112, 56×56). Later blocks only repeat these kinds at smaller sizes, and their firmware wraps each block in one call that must be split before testing.</p>
+  </div>
+  <div class="legend">
+    <span><i class="sw" style="background:var(--pass)"></i>1 · Passed before this week's fixes</span>
+    <span><i class="sw" style="background:var(--c2)"></i>2 · Passes after firmware/script fixes</span>
+    <span><i class="sw" style="background:var(--fixed)"></i>3 · Passes after the multiply fix</span>
+    <span><i class="sw" style="background:var(--c4)"></i>4 · Passes after the sigmoid fix</span>
+    <span><i class="sw" style="background:var(--open)"></i>5 · Not solved</span>
+    <span><i class="sw" style="background:var(--untested)"></i>Not tested yet</span>
+  </div>
+  <div class="tw"><table>
+    <thead><tr><th>Class</th><th>What it needs</th><th>Operations</th><th>Share of 26</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill p-pass">1 · passed before</span></td><td>Within ±1 with the inherited chip design plus the October memory-transfer patch. This week's faster test-bench memory changed no result, only the speed.</td><td class="mono">00 05 10 16 21 22 25 (7)</td><td class="mono">26.9 %</td></tr>
+      <tr><td><span class="pill p-c2">2 · firmware/script fix</span></td><td>Our firmware/script fix alone (bug 2, average scale and offset). No chip-design change.</td><td class="mono">20 (1)</td><td class="mono">3.8 %</td></tr>
+      <tr><td><span class="pill p-fixed">3 · multiply fix</span></td><td>Class-2 fixes (bug 1 multiply settings, bug 5 block spacing) plus chip fixes 7–9. Errors 192 / 2,733 / 1,052 / 695 bytes, all ±1.</td><td class="mono">02 07 12 18 (4)</td><td class="mono">15.4 %</td></tr>
+      <tr><td><span class="pill p-c4">4 · sigmoid fix</span></td><td>Class-2 fixes (bug 3 send each block twice, bug 4 table switch) plus chip fix 10. Real channels ±1; padding channels show 128 instead of 0 by design (the input padding is sigmoid(0)) and are discarded.</td><td class="mono">06 11 17 23 (4)</td><td class="mono">15.4 %</td></tr>
+      <tr><td><span class="pill p-open">5 · not solved</span></td><td>Bugs 11–13, 15 and 16 below. Depthwise (03 08 13 19) and wide 1×1 conv (04 09 14) are parked after two debug rounds.</td><td class="mono">01 03 04 08 09 13 14 15 19 24 (10)</td><td class="mono">38.5 %</td></tr>
+      <tr><td><span class="pill p-untested">not tested yet</span></td><td>Outside stage 1. Never simulated.</td><td class="mono">blocks f4 to f16, pool, classifier (135)</td><td class="mono">—</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted small">Classes 3 and 4 were each tested with only their own chip fix; the multiply and sigmoid fixes have not yet been tested together in one design.</p>
+  <p class="muted small">All results are from simulation. No ReXNet operation has run on the FPGA board yet.</p>
+  <div class="board" role="list" aria-label="Operation status by network block">
+    <div class="row"><div class="blk">stem</div><div class="tiles">
+      <div class="t pass"><div class="n">00</div>conv</div>
+      <div class="t open"><div class="n">01</div>sigmoid</div>
+      <div class="t fixed"><div class="n">02</div>multiply</div>
+    </div></div>
+    <div class="row"><div class="blk">f0</div><div class="tiles">
+      <div class="t open"><div class="n">03</div>depthwise</div>
+      <div class="t open"><div class="n">04</div>1×1 conv</div>
+    </div></div>
+    <div class="row"><div class="blk">f1</div><div class="tiles">
+      <div class="t pass"><div class="n">05</div>conv</div>
+      <div class="t c4"><div class="n">06</div>sigmoid</div>
+      <div class="t fixed"><div class="n">07</div>multiply</div>
+      <div class="t open"><div class="n">08</div>depthwise</div>
+      <div class="t open"><div class="n">09</div>1×1 conv</div>
+    </div></div>
+    <div class="row"><div class="blk">f2</div><div class="tiles">
+      <div class="t pass"><div class="n">10</div>conv</div>
+      <div class="t c4"><div class="n">11</div>sigmoid</div>
+      <div class="t fixed"><div class="n">12</div>multiply</div>
+      <div class="t open"><div class="n">13</div>depthwise</div>
+      <div class="t open"><div class="n">14</div>1×1 conv</div>
+      <div class="t open"><div class="n">15</div>add</div>
+    </div></div>
+    <div class="row"><div class="blk">f3</div><div class="tiles">
+      <div class="t pass"><div class="n">16</div>conv</div>
+      <div class="t c4"><div class="n">17</div>sigmoid</div>
+      <div class="t fixed"><div class="n">18</div>multiply</div>
+      <div class="t open"><div class="n">19</div>depthwise</div>
+      <div class="t c2"><div class="n">20</div>average</div>
+      <div class="t pass"><div class="n">21</div>conv</div>
+      <div class="t pass"><div class="n">22</div>conv</div>
+      <div class="t c4"><div class="n">23</div>sigmoid</div>
+      <div class="t open"><div class="n">24</div>multiply</div>
+      <div class="t pass"><div class="n">25</div>1×1 conv</div>
+    </div></div>
+  </div>
+  <p class="muted small">An operation is one step the chip runs on its own. One ReXNet layer can need several: the stem is a convolution (00) followed by a SiLU activation, which the model file stores as a sigmoid (01) and a multiply (02). An operation passes when every output byte is within ±1 of the correct answer, which is the original model run on a PC (±1 is normal rounding). Each operation is tested alone, starting from the correct input; errors adding up across operations are not tested yet.</p>
+</section>
+
+<section>
+  <h2>Bugs found this week</h2>
+  <div class="tw"><table>
+    <thead><tr><th>#</th><th>Bug</th><th>Effect</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr class="grp"><td colspan="4">In our firmware and test scripts</td></tr>
+      <tr><td class="n">1</td><td>Multiply settings written one slot off (02 07 12 18)</td><td>Output scale was 0; every output the same value</td><td><span class="pill p-pass">fixed</span></td></tr>
+      <tr><td class="n">2</td><td>Average operation: wrong scale and offset formula</td><td>Outputs wrong by up to 255</td><td><span class="pill p-pass">fixed</span> operation 20 passes</td></tr>
+      <tr><td class="n">3</td><td>Sigmoid unit waits for two inputs (copied from the two-input units)</td><td>Simulation froze</td><td><span class="pill p-pass">worked around</span> firmware sends each block twice</td></tr>
+      <tr><td class="n">4</td><td>Sigmoid table exists only with a compile switch that is off</td><td>Undefined outputs</td><td><span class="pill p-pass">fixed in sim</span> must also be on in the FPGA build</td></tr>
+      <tr><td class="n">5</td><td>Data blocks placed 1 MB apart, some are 2 MB</td><td>Blocks overwrote each other</td><td><span class="pill p-pass">fixed</span> overlap now checked automatically</td></tr>
+      <tr><td class="n">6</td><td>First convolution of block f3 (16) read the wrong memory address</td><td>Read old data. Only in the whole-network program, not in these one-operation tests</td><td><span class="pill p-pass">fixed</span></td></tr>
+      <tr class="grp"><td colspan="4">In the chip design, each proven with a Python copy of the circuit that reproduces the simulator's output byte for byte</td></tr>
+      <tr><td class="n">7</td><td>Multiply unit: each channel's result written over all 32 channels</td><td rowspan="3">4 multiply operations 45–86 % wrong; after the fix at most 0.14 % wrong, all ±1</td><td><span class="pill p-pass">fixed</span></td></tr>
+      <tr><td class="n">8</td><td>Multiply unit: negative numbers shifted as if positive</td><td><span class="pill p-pass">fixed</span></td></tr>
+      <tr><td class="n">9</td><td>Multiply unit: 20-bit register too small (needs 25)</td><td><span class="pill p-pass">fixed</span></td></tr>
+      <tr><td class="n">10</td><td>Sigmoid unit: "too large" check reads one bit, not the whole number</td><td>Large inputs wrapped around; after the fix 4 sigmoid operations within ±1</td><td><span class="pill p-pass">fixed</span></td></tr>
+      <tr class="grp"><td colspan="4">Not solved</td></tr>
+      <tr><td class="n">11</td><td>Depthwise convolution run alone outputs only its bias (03, 08, 13, 19)</td><td>Likely addresses its input buffer past 256 slots; the 2022 demo never ran it alone</td><td><span class="pill p-open">parked</span></td></tr>
+      <tr><td class="n">12</td><td>1×1 convolution writes nothing when output is 56 or 112 wide (04, 09, 14)</td><td>Undefined values in the multiply-add circuit above width 28</td><td><span class="pill p-open">parked</span></td></tr>
+      <tr><td class="n">13</td><td>Stem sigmoid needs an input scale above 1 (01)</td><td>The chip's scale format only holds values below 1</td><td><span class="pill p-open">open</span></td></tr>
+      <tr><td class="n">14</td><td>Sigmoid unit: proper chip fix so one input is enough (removes the bug 3 workaround)</td><td>One attempt moved the freeze, did not remove it</td><td><span class="pill p-open">open</span></td></tr>
+      <tr><td class="n">15</td><td>Add operation (15): errors up to 8, 21,504 bytes unwritten</td><td>The errors: our correct answer is taken after the next step (a concatenation), which uses a different scale. The missing bytes: not explained</td><td><span class="pill p-open">open</span></td></tr>
+      <tr><td class="n">16</td><td>Second multiply in f3 (24) freezes</td><td>Control processor stops at the third data load</td><td><span class="pill p-open">open</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Decisions needed</h2>
+  <ol class="list">
+    <li><b>When to rebuild the FPGA image with all chip fixes</b> (bugs 7–10 and the sigmoid table switch of bug 4). A rebuild takes about 6 h on the lab PC. The Nov 5 rebuild has only the October memory-transfer fix.</li>
+    <li><b>Ask the previous student</b> how standalone depthwise convolution was meant to work (bug 11, parked)?</li>
+  </ol>
+</section>
+
+<section>
+  <h2>Plan for next week (proposed)</h2>
+  <ul class="list">
+    <li>Load the Nov 5 rebuild on the board: rerun the 2022 demo, then run the stem convolution (00) and compare it byte by byte with the simulation.</li>
+    <li>Test the multiply and sigmoid fixes together in one design.</li>
+    <li>Investigate the add (15, bug 15) and the frozen multiply (24, bug 16).</li>
+    <li>Run two or more operations back to back, so the chip's own output feeds the next operation.</li>
+    <li>Extend the test table past block f3 (stage 2).</li>
+    <li>Check whether the 2022 SSD firmware stays under the memory-transfer size limit fixed in October (that bug is also in the 2022 image), and compare one board output with the original model.</li>
+    <li>If approved, start the FPGA rebuild with all chip fixes.</li>
+  </ul>
+</section>
+
+</main>
+
+</body>
+</html>
