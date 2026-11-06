@@ -1,6 +1,7 @@
 # CARES weekly reports — rules for writing them
 
-Public repo; GitHub Pages serves it at https://chousallen.github.io/cares-weekly-reports/.
+Public repo; GitHub Pages serves it at https://chousallen.github.io/cares/
+(repo `chousallen/cares`). Weekly reports go in `reports/YYYY-MM-DD-weekly/index.html`.
 The project's own repo (`../restnet_on_FPGA`, local only) holds the code, simulation records and
 facts; its `CLAUDE.md` is the source for numbers in a report.
 
